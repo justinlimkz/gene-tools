@@ -1,4 +1,4 @@
-data = open("gn.txt", "r")
+data = open("../human_data/data.txt", "r")
 query = open("in.txt", "r")
 compare = open("compare.txt", "r")
 '''
@@ -13,6 +13,8 @@ main = {}
 def fillMain():
 	name = ""
 	for line in data:
+		if line[0:2] != 'GN':
+			continue
 		q = line.split()
 		for str in q:
 			if str == "GN" or str[0] == '{':
