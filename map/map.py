@@ -1,3 +1,5 @@
+import urllib,urllib2
+
 data = open("../human_data/data.txt", "r")
 query = open("in.txt", "r")
 lookup = {}
@@ -24,6 +26,7 @@ def fillData():
 def answerQueries():
 	numFound = 0
 	numQueries = 0
+	notFoundQuery = ''
 	for ask in query:
 		ask = ask.strip()
 		numQueries += 1
@@ -45,8 +48,26 @@ def answerQueries():
 			if ask in lookup:
 				numFound += 1
 			else:
-				print ask, "Not found."
+				print ask
+				notFoundQuery += ask+' '
 	print "Found " + str(numFound) + " matches out of " + str(numQueries) + '; ' + str(numQueries-numFound) + ' not found.'
+	
+	print 'Resolving these...'
+	url = 'http://www.uniprot.org/uploadlists/'
+	params = {
+		'from':'ACC',
+		'to':'GENENAME',
+		'format':'tab',
+		'query': notFoundQuery
+	}
+
+	data = urllib.urlencode(params)
+	request = urllib2.Request(url, data)
+	contact = "" # Please set your email address here to help us debug in case of problems.
+	request.add_header('User-Agent', 'Python %s' % contact)
+	response = urllib2.urlopen(request)
+	page = response.read(200000)
+	print page
 	
 fillData()
 answerQueries()
