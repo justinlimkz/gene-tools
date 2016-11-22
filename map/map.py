@@ -6,6 +6,9 @@ results = open("results.txt", "w")
 lookup = {}
 
 def fillData():
+	'''
+	gets data from ../human_data/data.txt and creates the lookup table; avoids sending large queries to UniProt, which would take time.
+	'''
 	gene_name = ""
 	proteins = []
 	for line in data:
@@ -37,8 +40,8 @@ def answerQueries():
 		if ask in lookup:
 			numFound += 1
 			results.write(ask + '\t' + lookup[ask] + '\n')
-			#print ask, lookup[ask]
 		else:
+			ask_isoform = ''
 			if '-' in ask:
 				isoform = ask.split('-')
 				if len(isoform) != 2:
@@ -46,19 +49,20 @@ def answerQueries():
 				else:
 					try:
 						int(isoform[1])
-						ask = isoform[0]
+						ask_isoform = isoform[0]
 					except:
 						pass
-			if ask in lookup:
+			if ask_isoform in lookup:
 				numFound += 1
-				results.write(ask + '\t' + lookup[ask] + '\n')
+				results.write(ask + '\t' + lookup[ask_isoform] + '\n')
 			else:
 				notFoundQuery += ask+' '
 				remain.append(ask)
-	#print "Found " + str(numFound) + " matches out of " + str(numQueries) + '; ' + str(numQueries-numFound) + ' not found.'
 	print 'Resolving problematic IDs...'
 	
-	#get ID to check if entries exist
+	'''
+	get ID to check if entries exist
+	'''
 	url = 'http://www.uniprot.org/uploadlists/'
 	params = {
 		'from':'ACC',
@@ -79,7 +83,9 @@ def answerQueries():
 		if entry[0] != 'From':
 			entries.append(entry[0])
 	
-	#get gene names
+	'''
+	get gene names
+	'''
 	params = {
 		'from':'ACC',
 		'to':'GENENAME',
@@ -99,18 +105,39 @@ def answerQueries():
 		geneNames[entry[0]] = entry[1]
 	
 	numUnassigned = 0
-	print 'Unassigned IDs:'
-	#print found gene names
+	
+	'''
+	get Ensembl IDs
+	'''
+	params = {
+		'from':'ACC',
+		'to':'ENSEMBL_ID',
+		'format':'tab',
+		'query': notFoundQuery
+	}
+	data = urllib.urlencode(params)
+	request = urllib2.Request(url, data)
+	contact = ""
+	request.add_header('User-Agent', 'Python %s' % contact)
+	response = urllib2.urlopen(request)
+	page = response.read(200000).splitlines()
+	ensemblID = {}
+	for entry in page:
+		entry = entry.split('\t')
+		ensemblID[entry[0]] = entry[1]
+	
+	print 'Unassigned IDs (Ensembl ID given where possible):'
 	for ID in entries:
 		if ID in geneNames and ID != 'From':
 			results.write(ID + '\t' + geneNames[ID] + '\n')
 			numFound += 1
 		else:
-			print ID
 			numUnassigned += 1
+			if ID in ensemblID and ID != 'From':
+				print ID + ' ' + ensemblID[ID]
+			else:
+				print ID
 		remain.remove(ID)
-			
-	#print str(numFound) + ' found, ' + str(numUnassigned) + ' unassigned.'
 	
 	numObsolete = 0
 	print 'Obsolete IDs:'
@@ -133,7 +160,6 @@ def answerQueries():
 	for ID in toRemove:
 		remain.remove(ID)
 	
-	#print str(numObsolete) + ' obsolete, ' + str(numQueries-numFound-numUnassigned-numObsolete) + ' remain.'
 	print "Bad IDs (does not exist in UniProt):"
 	for ID in remain:
 		print ID
