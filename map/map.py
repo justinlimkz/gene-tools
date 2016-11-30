@@ -2,9 +2,11 @@ from BeautifulSoup import BeautifulSoup
 import urllib,urllib2
 
 data = open("../human_data/data.txt", "r")
+hgnc_data = open("../hgnc_data/hgnc_symbol_ac.txt", "r")
 query = open("in.txt", "r")
 results = open("results.txt", "w")
 lookup = {}
+hgnc_lookup = {}
 
 def fillData():
 	'''
@@ -27,8 +29,22 @@ def fillData():
 			gene_name = q[1].split("=")[1].strip(",;")
 			for prot in proteins:
 				lookup[prot] = gene_name
+				
+def fillHGNCData():
+	firstLine = 1 # ignore header line
+	for line in hgnc_data:
+		line = line.strip()
+		if firstLine == 1:
+			firstLine = 0
+			continue
+		line = line.split()
+		gene_name = line[0].strip()
+		for i in range(1, len(line)):
+			AC = line[i].strip(" ,;")
+			hgnc_lookup[AC] = gene_name
 		
 def answerQueries():
+	numHGNC = 0
 	numFound = 0
 	numQueries = 0
 	notFoundQuery = ''
@@ -38,7 +54,11 @@ def answerQueries():
 		ask = ask.strip()
 		numQueries += 1
 	
-		if ask in lookup:
+		if ask in hgnc_lookup:
+			numFound += 1
+			numHGNC += 1
+			results.write(ask + '\t' + hgnc_lookup[ask] + '\n')
+		elif ask in lookup:
 			numFound += 1
 			results.write(ask + '\t' + lookup[ask] + '\n')
 		else:
@@ -53,7 +73,11 @@ def answerQueries():
 						ask_isoform = isoform[0]
 					except:
 						pass
-			if ask_isoform in lookup:
+			if ask_isoform in hgnc_lookup:
+				numFound += 1
+				numHGNC += 1
+				results.write(ask + '\t' + hgnc_lookup[ask_isoform] + '\n')
+			elif ask_isoform in lookup:
 				numFound += 1
 				results.write(ask + '\t' + lookup[ask_isoform] + '\n')
 			else:
@@ -189,8 +213,10 @@ def answerQueries():
 		print ID
 		
 	print
+	print str(numHGNC) + ' found directly on HGNC.'
 	print str(numFound) + ' found, ' + str(numUnassigned) + ' unassigned, ' + str(numObsolete) + ' obsolete, ' + str(numQueries-numFound-numUnassigned-numObsolete) + ' bad; ' + str(numQueries) + ' queries total.'
 	print "Results written to results.txt."	
 	
+fillHGNCData()
 fillData()
 answerQueries()	
