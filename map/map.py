@@ -234,6 +234,7 @@ def answerQueries():
 										arrayGN = line.split()
 										print ID, arrayGN[1].split('=')[1]
 										MAP[ID] = arrayGN[1].split('=')[1]
+										numFound += 1
 										break
 								break
 						except:
@@ -256,8 +257,8 @@ def answerQueries():
 		print ID
 		
 	print
-	print str(numHGNC) + ' found on HGNC, ' + str(numFound-numHGNC-numFoundNotInHGNC) + ' converted from UniProt to HGNC, ' + str(numFoundNotInHGNC) + ' on UniProt but not on HGNC.'
-	print str(numFound) + ' found, ' + str(numUnassigned) + ' unassigned, ' + str(numObsolete) + ' obsolete, ' + str(numQueries-numFound-numUnassigned-numObsolete) + ' bad; ' + str(numQueries) + ' queries total.'
+	print str(numFound) + ' found; among these, ' + str(numHGNC) + ' found on HGNC, ' + str(numFound-numHGNC-numFoundNotInHGNC) + ' converted from UniProt to HGNC, ' + str(numFoundNotInHGNC) + ' on Uniprot but not HGNC.'
+	print str(numUnassigned) + ' unassigned, ' + str(numObsolete) + ' obsolete, ' + str(numQueries-numFound-numUnassigned) + ' bad; ' + str(numQueries) + ' queries total.'
 	print "Results written to results.txt."	
 	
 fillHGNCData()
