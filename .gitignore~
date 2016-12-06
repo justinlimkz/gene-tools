@@ -36,4 +36,9 @@
 ehthumbs.db
 Thumbs.db
 
-human_data/
+human_data/data.txt
+human_data/uniprot_sprot_human.txt
+human_data/uniprot_trembl_human.txt
+human_data/unused/
+hgnc_data/hgnc_symbol_ac.txt
+hgnc_data/hgnc_symbol_previous_synonym.txt

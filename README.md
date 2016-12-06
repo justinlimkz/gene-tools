@@ -9,3 +9,5 @@ The main project - automating the assignment of protein IDs / accession numbers 
 ### match
 
 match takes in two lists of gene names and returns the genes present in both lists, taking into account synonyms and old names. 
+
+## Implementation Notes

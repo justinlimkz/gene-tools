@@ -256,8 +256,7 @@ def answerQueries():
 		print ID
 		
 	print
-	print str(numHGNC) + ' found directly on HGNC.'
-	print str(numFound-numFoundNotInHGNC) + ' converted from UniProt to HGNC, ' + str(numFoundNotInHGNC) + ' on UniProt but not on HGNC.'
+	print str(numHGNC) + ' found on HGNC, ' + str(numFound-numHGNC-numFoundNotInHGNC) + ' converted from UniProt to HGNC, ' + str(numFoundNotInHGNC) + ' on UniProt but not on HGNC.'
 	print str(numFound) + ' found, ' + str(numUnassigned) + ' unassigned, ' + str(numObsolete) + ' obsolete, ' + str(numQueries-numFound-numUnassigned-numObsolete) + ' bad; ' + str(numQueries) + ' queries total.'
 	print "Results written to results.txt."	
 	
