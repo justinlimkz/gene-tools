@@ -3,10 +3,14 @@ import urllib,urllib2
 
 data = open("../human_data/data.txt", "r")
 hgnc_data = open("../hgnc_data/hgnc_symbol_ac.txt", "r")
+hgnc_gene_data = open("../hgnc_data/hgnc_symbol_previous_synonym.txt", "r")
 query = open("in.txt", "r")
 results = open("results.txt", "w")
 lookup = {}
 hgnc_lookup = {}
+hgnc_gene_map = {}
+QUERIES = []
+MAP = {}
 
 def fillData():
 	'''
@@ -42,25 +46,46 @@ def fillHGNCData():
 		for i in range(1, len(line)):
 			AC = line[i].strip(" ,;")
 			hgnc_lookup[AC] = gene_name
+	for line in hgnc_gene_data:
+		line = line.strip().split()
+		gene_name = line[0].strip()
+		for i in range(0, len(line)):
+			alternate_name = line[i].strip(" ,;")
+			hgnc_gene_map[alternate_name] = gene_name
+			
+def getHGNCName(gene):
+	if gene in hgnc_gene_map:
+		return hgnc_gene_map[gene]
+	else:
+		return -1
+	
 		
 def answerQueries():
 	numHGNC = 0
 	numFound = 0
 	numQueries = 0
+	numFoundNotInHGNC = 0
 	notFoundQuery = ''
 	remain = []
 	
 	for ask in query:
 		ask = ask.strip()
+		QUERIES.append(ask)
 		numQueries += 1
 	
 		if ask in hgnc_lookup:
 			numFound += 1
 			numHGNC += 1
-			results.write(ask + '\t' + hgnc_lookup[ask] + '\n')
+			MAP[ask] = hgnc_lookup[ask]
+			#results.write(ask + '\t' + hgnc_lookup[ask] + '\n')
 		elif ask in lookup:
 			numFound += 1
-			results.write(ask + '\t' + lookup[ask] + '\n')
+			gene_name = getHGNCName(lookup[ask])
+			if gene_name == -1:
+				numFoundNotInHGNC += 1
+				gene_name = lookup[ask]
+			MAP[ask] = gene_name
+			#results.write(ask + '\t' + gene_name + '\n')
 		else:
 			ask_isoform = ''
 			if '-' in ask:
@@ -76,10 +101,16 @@ def answerQueries():
 			if ask_isoform in hgnc_lookup:
 				numFound += 1
 				numHGNC += 1
-				results.write(ask + '\t' + hgnc_lookup[ask_isoform] + '\n')
+				MAP[ask] = hgnc_lookup[ask_isoform]
+				#results.write(ask + '\t' + hgnc_lookup[ask_isoform] + '\n')
 			elif ask_isoform in lookup:
 				numFound += 1
-				results.write(ask + '\t' + lookup[ask_isoform] + '\n')
+				gene_name = getHGNCName(lookup[ask_isoform])
+				if gene_name == -1:
+					numFoundNotInHGNC += 1
+					gene_name = lookup[ask_isoform]
+				MAP[ask] = gene_name
+				#results.write(ask + '\t' + lookup[ask_isoform] + '\n')
 			else:
 				notFoundQuery += ask+' '
 				remain.append(ask)
@@ -155,7 +186,12 @@ def answerQueries():
 	print 'Unassigned IDs (Ensembl ID given where possible):'
 	for ID in entries:
 		if ID in geneNames and ID != 'From':
-			results.write(ID + '\t' + geneNames[ID] + '\n')
+			gene_name = getHGNCName(geneNames[ID])
+			if gene_name == -1:
+				numFoundNotInHGNC += 1
+				gene_name = geneNames[ID]
+			MAP[ID] = gene_name
+			#results.write(ID + '\t' + geneNames[ID] + '\n')
 			numFound += 1
 		else:	
 			numUnassigned += 1
@@ -197,6 +233,7 @@ def answerQueries():
 									if line[0:2] == 'GN':
 										arrayGN = line.split()
 										print ID, arrayGN[1].split('=')[1]
+										MAP[ID] = arrayGN[1].split('=')[1]
 										break
 								break
 						except:
@@ -206,6 +243,12 @@ def answerQueries():
 					toRemove.append(ID)
 	for ID in toRemove:
 		remain.remove(ID)
+		
+	for ask in QUERIES:
+		if ask not in MAP:
+			MAP[ask] = ''
+		results.write(ask + '\t' + MAP[ask] + '\n')
+		
 	
 	print
 	print "Bad IDs (does not exist in UniProt):"
@@ -214,6 +257,7 @@ def answerQueries():
 		
 	print
 	print str(numHGNC) + ' found directly on HGNC.'
+	print str(numFound-numFoundNotInHGNC) + ' converted from UniProt to HGNC, ' + str(numFoundNotInHGNC) + ' on UniProt but not on HGNC.'
 	print str(numFound) + ' found, ' + str(numUnassigned) + ' unassigned, ' + str(numObsolete) + ' obsolete, ' + str(numQueries-numFound-numUnassigned-numObsolete) + ' bad; ' + str(numQueries) + ' queries total.'
 	print "Results written to results.txt."	
 	
