@@ -43,3 +43,5 @@ human_data/unused/
 hgnc_data/hgnc_symbol_ac.txt
 hgnc_data/hgnc_symbol_previous_synonym.txt
 testing/
+map/unused/
+map/versions/
