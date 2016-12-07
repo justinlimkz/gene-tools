@@ -45,8 +45,11 @@ gene-tools
 __map__ takes input from `./map/in.txt`, which is a list of UniProt IDs or Accession Numbers, and outputs `./map/results.txt`, a tab-spaced list of those IDs with corresponding HGNC gene names. For instance, the ID `Q15465` will be mapped to `SHH`. 
 
 __map__ also identifies problematic cases and resolves them accordingly where possible. For instance, 
+
 1. _Obsolete IDs_: IDs that were once in use, but not any more. e.g. `E9PEB9` is an obsolete ID on UniProt and cannot be found on HGNC - __map__ will tell you that the last existing gene name on UniProt is `DST` and checks if `DST` is the correct HGNC gene name (it is). 
+
 2. _Unassigned IDs_: IDs that exist, but have not been assigned a gene symbol. e.g. `P00761` does not have an assigned gene name - __map__ reports this, and returns its Ensembl ID where possible.
+
 3. _Bad IDs_: IDs that do not exist, possibly as a result of a typo.
 
 ### match
