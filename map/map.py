@@ -13,9 +13,7 @@ QUERIES = []
 MAP = {}
 
 def fillData():
-	'''
-	gets data from ../human_data/data.txt and creates the lookup table; avoids sending large queries to UniProt, which would take time.
-	'''
+	# gets data from ../human_data/data.txt and creates the lookup table
 	gene_name = ""
 	proteins = []
 	for line in data:
@@ -58,6 +56,23 @@ def getHGNCName(gene):
 		return hgnc_gene_map[gene]
 	else:
 		return -1
+		
+def queryUniProt(to, queryString):
+	url = 'http://www.uniprot.org/uploadlists/'
+	params = {
+		'from':'ACC',
+		'to': to,
+		'format':'tab',
+		'query': queryString
+	}
+
+	data = urllib.urlencode(params)
+	request = urllib2.Request(url, data)
+	contact = ""
+	request.add_header('User-Agent', 'Python %s' % contact)
+	response = urllib2.urlopen(request)
+	page = response.read(200000).splitlines()
+	return page
 	
 		
 def answerQueries():
@@ -77,7 +92,6 @@ def answerQueries():
 			numFound += 1
 			numHGNC += 1
 			MAP[ask] = hgnc_lookup[ask]
-			#results.write(ask + '\t' + hgnc_lookup[ask] + '\n')
 		elif ask in lookup:
 			numFound += 1
 			gene_name = getHGNCName(lookup[ask])
@@ -85,7 +99,6 @@ def answerQueries():
 				numFoundNotInHGNC += 1
 				gene_name = lookup[ask]
 			MAP[ask] = gene_name
-			#results.write(ask + '\t' + gene_name + '\n')
 		else:
 			ask_isoform = ''
 			if '-' in ask:
@@ -102,7 +115,6 @@ def answerQueries():
 				numFound += 1
 				numHGNC += 1
 				MAP[ask] = hgnc_lookup[ask_isoform]
-				#results.write(ask + '\t' + hgnc_lookup[ask_isoform] + '\n')
 			elif ask_isoform in lookup:
 				numFound += 1
 				gene_name = getHGNCName(lookup[ask_isoform])
@@ -110,51 +122,21 @@ def answerQueries():
 					numFoundNotInHGNC += 1
 					gene_name = lookup[ask_isoform]
 				MAP[ask] = gene_name
-				#results.write(ask + '\t' + lookup[ask_isoform] + '\n')
 			else:
 				notFoundQuery += ask+' '
 				remain.append(ask)
 	print 'Resolving problematic IDs...'
 	
-	'''
-	get ID to check if entries exist
-	'''
-	url = 'http://www.uniprot.org/uploadlists/'
-	params = {
-		'from':'ACC',
-		'to':'ID',
-		'format':'tab',
-		'query': notFoundQuery
-	}
-
-	data = urllib.urlencode(params)
-	request = urllib2.Request(url, data)
-	contact = ""
-	request.add_header('User-Agent', 'Python %s' % contact)
-	response = urllib2.urlopen(request)
-	page = response.read(200000).splitlines()
+	# get ID to check if entries exist
+	page = queryUniProt('ID', notFoundQuery)
 	entries = []
 	for entry in page:
 		entry = entry.split('\t')
 		if entry[0] != 'From':
 			entries.append(entry[0])
-	
-	'''
-	get gene names
-	'''
-	params = {
-		'from':'ACC',
-		'to':'GENENAME',
-		'format':'tab',
-		'query': notFoundQuery
-	}
 
-	data = urllib.urlencode(params)
-	request = urllib2.Request(url, data)
-	contact = ""
-	request.add_header('User-Agent', 'Python %s' % contact)
-	response = urllib2.urlopen(request)
-	page = response.read(200000).splitlines()
+	# get gene names
+	page = queryUniProt('GENENAME', notFoundQuery)
 	geneNames = {}
 	for entry in page:
 		entry = entry.split('\t')
@@ -162,21 +144,8 @@ def answerQueries():
 	
 	numUnassigned = 0
 	
-	'''
-	get Ensembl IDs
-	'''
-	params = {
-		'from':'ACC',
-		'to':'ENSEMBL_ID',
-		'format':'tab',
-		'query': notFoundQuery
-	}
-	data = urllib.urlencode(params)
-	request = urllib2.Request(url, data)
-	contact = ""
-	request.add_header('User-Agent', 'Python %s' % contact)
-	response = urllib2.urlopen(request)
-	page = response.read(200000).splitlines()
+	# get Ensembl IDs
+	page = queryUniProt('ENSEMBL_ID', notFoundQuery)
 	ensemblID = {}
 	for entry in page:
 		entry = entry.split('\t')
@@ -191,7 +160,6 @@ def answerQueries():
 				numFoundNotInHGNC += 1
 				gene_name = geneNames[ID]
 			MAP[ID] = gene_name
-			#results.write(ID + '\t' + geneNames[ID] + '\n')
 			numFound += 1
 		else:	
 			numUnassigned += 1

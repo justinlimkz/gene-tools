@@ -35,7 +35,6 @@ gene-tools
 - map
 - match
 - README.md
-- testing
 ```
 
 ## Usage
