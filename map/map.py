@@ -11,6 +11,8 @@ hgnc_lookup = {}
 hgnc_gene_map = {}
 QUERIES = []
 MAP = {}
+STATUS = {}
+STATUS_MSG = {0 : 'In HGNC', 1 : 'Converted from UniProt to HGNC', 2 : 'Not in HGNC', 3 : 'Obsolete', 4 : 'Unassigned', 5 : 'Bad ID, does not exist'}
 
 def fillData():
 	# gets data from ../human_data/data.txt and creates the lookup table
@@ -92,12 +94,16 @@ def answerQueries():
 			numFound += 1
 			numHGNC += 1
 			MAP[ask] = hgnc_lookup[ask]
+			STATUS[ask] = STATUS_MSG[0]
 		elif ask in lookup:
 			numFound += 1
 			gene_name = getHGNCName(lookup[ask])
 			if gene_name == -1:
 				numFoundNotInHGNC += 1
 				gene_name = lookup[ask]
+				STATUS[ask] = STATUS_MSG[2]
+			else:
+				STATUS[ask] = STATUS_MSG[1]
 			MAP[ask] = gene_name
 		else:
 			ask_isoform = ''
@@ -115,12 +121,16 @@ def answerQueries():
 				numFound += 1
 				numHGNC += 1
 				MAP[ask] = hgnc_lookup[ask_isoform]
+				STATUS[ask] = STATUS_MSG[0]
 			elif ask_isoform in lookup:
 				numFound += 1
 				gene_name = getHGNCName(lookup[ask_isoform])
 				if gene_name == -1:
 					numFoundNotInHGNC += 1
 					gene_name = lookup[ask_isoform]
+					STATUS[ask] = STATUS_MSG[2]
+				else:
+					STATUS[ask] = STATUS_MSG[1]
 				MAP[ask] = gene_name
 			else:
 				notFoundQuery += ask+' '
@@ -159,6 +169,9 @@ def answerQueries():
 			if gene_name == -1:
 				numFoundNotInHGNC += 1
 				gene_name = geneNames[ID]
+				STATUS[ID] = STATUS_MSG[2]
+			else:
+				STATUS[ID] = STATUS_MSG[1]
 			MAP[ID] = gene_name
 			numFound += 1
 		else:	
@@ -167,6 +180,7 @@ def answerQueries():
 				print ID + ' ' + ensemblID[ID]
 			else:
 				print ID
+			STATUS[ID] = STATUS_MSG[4]
 		remain.remove(ID)
 	
 	numObsolete = 0
@@ -197,13 +211,18 @@ def answerQueries():
 								correct_site = "http://www.uniprot.org/uniprot"+possible_site[1:]
 								correct_data = urllib2.urlopen(correct_site)
 								correct_page = correct_data.read(200000).splitlines()
+								MAP[ID] = []
+								found = False
 								for line in correct_page:
 									if line[0:2] == 'GN':
 										arrayGN = line.split()
-										print ID, arrayGN[1].split('=')[1]
-										MAP[ID] = arrayGN[1].split('=')[1]
-										numFound += 1
-										break
+										if arrayGN[1].split('=')[0] == 'Name':
+											print ID, arrayGN[1].split('=')[1]
+											MAP[ID].append(arrayGN[1].split('=')[1])
+											found = True
+								if found:
+									numFound += 1
+								STATUS[ID] = STATUS_MSG[3]
 								break
 						except:
 							pass
@@ -216,7 +235,16 @@ def answerQueries():
 	for ask in QUERIES:
 		if ask not in MAP:
 			MAP[ask] = ''
-		results.write(ask + '\t' + MAP[ask] + '\n')
+		if ask not in STATUS:
+			STATUS[ask] = STATUS_MSG[5]
+		if type(MAP[ask]) == type([]):
+			ans = ask + '\t'
+			for name in MAP[ask]:
+				ans += name + ' '
+			ans += '\t' + STATUS[ask] + '\n'
+			results.write(ans)
+		else:
+			results.write(ask + '\t' + MAP[ask] + '\t' + STATUS[ask] + '\n')
 		
 	
 	print
