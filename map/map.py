@@ -46,12 +46,17 @@ def fillHGNCData():
 		for i in range(1, len(line)):
 			AC = line[i].strip(" ,;")
 			hgnc_lookup[AC] = gene_name
-	for line in hgnc_gene_data:
+	for line in hgnc_gene_data: #first assign all approved symbols
+	    line = line.strip().split()
+	    gene_name = line[0].strip()
+	    hgnc_gene_map[gene_name] = gene_name
+	for line in hgnc_gene_data: #then assign the synonyms and previous symbols
 		line = line.strip().split()
 		gene_name = line[0].strip()
 		for i in range(0, len(line)):
 			alternate_name = line[i].strip(" ,;")
-			hgnc_gene_map[alternate_name] = gene_name
+			if alternate_name not in hgnc_gene_map:
+			    hgnc_gene_map[alternate_name] = gene_name
 			
 def getHGNCName(gene):
 	if gene in hgnc_gene_map:
