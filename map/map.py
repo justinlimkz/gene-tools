@@ -254,12 +254,14 @@ def answerQueries():
         elif STATUS[ask] == STATUS_MSG[3]:
             STATUS[ask] = ask + " is obsolete, gene name is retrieved from old versions of UniProt"
         elif STATUS[ask] == STATUS_MSG[4] and ask in ENSEMBL_NAME:
-            STATUS[ask] = ask + " is unassigned, its Ensembl ID is " + ENSEMBL_NAME[ask]
+            STATUS[ask] = ask + " is unassigned; its Ensembl ID is provided as gene name."
+            results.write(ask + '\t' + ENSEMBL_NAME[ask] + '\t' + STATUS[ask] + '\n')
+            continue
         elif STATUS[ask] == STATUS_MSG[4]:
             STATUS[ask] = ask + " is unassigned, no Ensembl ID available."
         elif STATUS[ask] == STATUS_MSG[5]:
             STATUS[ask] = ask + " does not exist."    
-        
+            
         if type(MAP[ask]) == type([]):
             ans = ask + '\t'
             for name in MAP[ask]:
