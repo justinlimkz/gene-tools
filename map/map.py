@@ -256,6 +256,7 @@ def answerQueries():
             MAP[ask] = ''
         if ask not in STATUS:
             STATUS[ask] = STATUS_MSG[5]
+            MAP[ask] = "incorrect_ID"
             
         if STATUS[ask] == STATUS_MSG[0]:
             STATUS[ask] = MAP[ask] + " is in HGNC."    
