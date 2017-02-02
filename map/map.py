@@ -1,4 +1,5 @@
 from BeautifulSoup import BeautifulSoup
+from sets import Set
 import urllib,urllib2
 
 data = open("../human_data/data.txt", "r")
@@ -14,6 +15,7 @@ MAP = {}
 ENSEMBL_NAME = {}
 STATUS = {}
 STATUS_MSG = {0 : 'In HGNC', 1 : 'Converted from UniProt to HGNC', 2 : 'Not in HGNC', 3 : 'Obsolete', 4 : 'Unassigned', 5 : 'Bad ID, does not exist'}
+DONE = {}
 
 def fillData():
     # gets data from ../human_data/data.txt and creates the lookup table
@@ -179,21 +181,25 @@ def answerQueries():
             else:
                 STATUS[ID] = STATUS_MSG[1]
             MAP[ID] = gene_name
-            numFound += 1
+            while ID in remain:
+                numFound += 1
+                remain.remove(ID)
         else:    
-            numUnassigned += 1
             if ID in ensemblID and ID != 'From':
                 print ID + ' ' + ensemblID[ID]
                 ENSEMBL_NAME[ID] = ensemblID[ID]
             else:
                 print ID
             STATUS[ID] = STATUS_MSG[4]
-        remain.remove(ID)
+            while ID in remain:
+                numUnassigned += 1
+                remain.remove(ID)
     
     numObsolete = 0
     print
     print 'Obsolete IDs (last existing gene name on UniProt given):'
     toRemove = []
+    obsoleteSet = Set()
     for ID in remain:
         site = "http://www.uniprot.org/uniprot/?query=id:" + ID + "&sort=score&columns=id,version&format=tab"
         data = urllib2.urlopen(site)
@@ -224,7 +230,7 @@ def answerQueries():
                                     if line[0:2] == 'GN':
                                         arrayGN = line.split()
                                         if arrayGN[1].split('=')[0] == 'Name':
-                                            print ID, arrayGN[1].split('=')[1]
+                                            obsoleteSet.add(ID + ' ' + arrayGN[1].split('=')[1])
                                             MAP[ID].append(arrayGN[1].split('=')[1])
                                             found = True
                                 if found:
@@ -238,8 +244,14 @@ def answerQueries():
                     toRemove.append(ID)
     for ID in toRemove:
         remain.remove(ID)
+    for msg in obsoleteSet:
+        print msg
         
     for ask in QUERIES:
+        if ask in DONE:
+            results.write(DONE[ask])
+            continue
+    
         if ask not in MAP:
             MAP[ask] = ''
         if ask not in STATUS:
@@ -256,6 +268,7 @@ def answerQueries():
         elif STATUS[ask] == STATUS_MSG[4] and ask in ENSEMBL_NAME:
             STATUS[ask] = ask + " is unassigned; its Ensembl ID is provided as gene name."
             results.write(ask + '\t' + ENSEMBL_NAME[ask] + '\t' + STATUS[ask] + '\n')
+            DONE[ask] = ask + '\t' + ENSEMBL_NAME[ask] + '\t' + STATUS[ask] + '\n'
             continue
         elif STATUS[ask] == STATUS_MSG[4]:
             STATUS[ask] = ask + " is unassigned, no Ensembl ID available."
@@ -269,12 +282,15 @@ def answerQueries():
                 
             ans += '\t' + STATUS[ask] + '\n'
             results.write(ans)
+            DONE[ask] = ans
         else:
             results.write(ask + '\t' + MAP[ask] + '\t' + STATUS[ask] + '\n')
+            DONE[ask] = ask + '\t' + MAP[ask] + '\t' + STATUS[ask] + '\n'
         
     
     print
     print "Bad IDs (does not exist in UniProt):"
+    remain = Set(remain)
     for ID in remain:
         print ID
         
