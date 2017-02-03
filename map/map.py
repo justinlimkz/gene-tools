@@ -48,7 +48,10 @@ def fillHGNCData():
         gene_name = line[0].strip()
         for i in range(1, len(line)):
             AC = line[i].strip(" ,;")
-            hgnc_lookup[AC] = gene_name
+            if AC in hgnc_lookup:
+                hgnc_lookup[AC].append(gene_name)
+            else:
+                hgnc_lookup[AC] = [gene_name]
     for line in hgnc_gene_data: #first assign all approved symbols
         line = line.strip().split()
         gene_name = line[0].strip()
@@ -105,14 +108,8 @@ def answerQueries():
             STATUS[ask] = STATUS_MSG[0]
         elif ask in lookup:
             numFound += 1
-            gene_name = getHGNCName(lookup[ask])
-            if gene_name == -1:
-                numFoundNotInHGNC += 1
-                gene_name = lookup[ask]
-                STATUS[ask] = STATUS_MSG[2]
-            else:
-                STATUS[ask] = STATUS_MSG[1]
-            MAP[ask] = gene_name
+            STATUS[ask] = STATUS_MSG[2]
+            MAP[ask] = lookup[ask]
         else:
             ask_isoform = ''
             if '-' in ask:
@@ -132,14 +129,8 @@ def answerQueries():
                 STATUS[ask] = STATUS_MSG[0]
             elif ask_isoform in lookup:
                 numFound += 1
-                gene_name = getHGNCName(lookup[ask_isoform])
-                if gene_name == -1:
-                    numFoundNotInHGNC += 1
-                    gene_name = lookup[ask_isoform]
-                    STATUS[ask] = STATUS_MSG[2]
-                else:
-                    STATUS[ask] = STATUS_MSG[1]
-                MAP[ask] = gene_name
+                STATUS[ask] = STATUS_MSG[2]
+                MAP[ask] = lookup[ask_isoform]
             else:
                 notFoundQuery += ask+' '
                 remain.append(ask)
@@ -173,14 +164,8 @@ def answerQueries():
     print 'Unassigned IDs (Ensembl ID given where possible):'
     for ID in entries:
         if ID in geneNames and ID != 'From':
-            gene_name = getHGNCName(geneNames[ID])
-            if gene_name == -1:
-                numFoundNotInHGNC += 1
-                gene_name = geneNames[ID]
-                STATUS[ID] = STATUS_MSG[2]
-            else:
-                STATUS[ID] = STATUS_MSG[1]
-            MAP[ID] = gene_name
+            STATUS[ID] = STATUS_MSG[2]
+            MAP[ID] = geneNames[ID]
             while ID in remain:
                 numFound += 1
                 remain.remove(ID)
@@ -259,11 +244,13 @@ def answerQueries():
             MAP[ask] = "incorrect_ID"
             
         if STATUS[ask] == STATUS_MSG[0]:
-            STATUS[ask] = MAP[ask] + " is in HGNC."    
-        elif STATUS[ask] == STATUS_MSG[1]:
-            STATUS[ask] = MAP[ask] + " gene name converted from UniProt name to HGNC."
+            if type(MAP[ask]) == type([]):
+                MAP[ask].sort()
+                STATUS[ask] = MAP[ask][0] + " is in HGNC."
+            else:
+                STATUS[ask] = MAP[ask] + " is in HGNC."    
         elif STATUS[ask] == STATUS_MSG[2]:
-            STATUS[ask] = MAP[ask] + " gene name not present in HGNC, UniProt name given."
+            STATUS[ask] = MAP[ask] + " HUGO gene name not available, UniProt gene name returned."
         elif STATUS[ask] == STATUS_MSG[3]:
             STATUS[ask] = ask + " is obsolete, gene name is retrieved from old versions of UniProt"
         elif STATUS[ask] == STATUS_MSG[4] and ask in ENSEMBL_NAME:
@@ -273,15 +260,23 @@ def answerQueries():
             continue
         elif STATUS[ask] == STATUS_MSG[4]:
             STATUS[ask] = ask + " is unassigned, no Ensembl ID available."
+            results.write(ask + '\t' + 'uncharacterized_protein' + '\t' + STATUS[ask] + '\n')
+            DONE[ask] = ask + '\t' + 'uncharacterized_protein' + '\t' + STATUS[ask] + '\n'
+            continue
+            
         elif STATUS[ask] == STATUS_MSG[5]:
             STATUS[ask] = ask + " does not exist."    
             
         if type(MAP[ask]) == type([]):
             ans = ask + '\t'
-            for name in MAP[ask]:
-                ans += name + ' '
+            ans += MAP[ask][0]
+            ans += '\t' + STATUS[ask]
+            if len(MAP[ask]) > 1:
+                ans += " First name in alphabetical order given, other names: "
+                for i in range(1, len(MAP[ask])):
+                    ans += MAP[ask][i] + ' '
+            ans += '\n'
                 
-            ans += '\t' + STATUS[ask] + '\n'
             results.write(ans)
             DONE[ask] = ans
         else:
