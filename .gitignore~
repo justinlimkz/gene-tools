@@ -45,3 +45,5 @@ hgnc_data/hgnc_symbol_previous_synonym.txt
 testing/
 map/unused/
 map/versions/
+map/results.txt
+map/in.txt
