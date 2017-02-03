@@ -29,7 +29,6 @@ gene-tools
 --- uniprot_sprot_human.dat
 --- uniprot_trembl_human.dat
 - map
-- match
 - README.md
 ```
 
