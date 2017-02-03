@@ -6,10 +6,6 @@ Work in progress for my UROP at the Lage Lab at the Broad Institute of Harvard a
 
 The main project - automating the assignment of protein IDs / accession numbers to HGNC gene names. Takes in a list of IDs as input, separated by newlines, and returns a list of assigned gene names where possible, and provides information about all other cases. For instance, map reports unassigned protein IDs and returns its Ensembl ID wherever possible.
 
-### match
-
-match takes in two lists of gene names and returns the genes present in both lists, taking into account synonyms and old names. 
-
 ## Setup
 
 The tools draw information from [UniProt](http://www.uniprot.org) and [HGNC](http://www.genenames.org), both locally and programmatically through queries. To set up the local databases properly, follow the instructions in the following folders: `./human_data/` and `./hgnc_data`. These are repeated below for completeness.
@@ -52,9 +48,3 @@ __map__ also identifies problematic cases (i.e. cannot be mapped solely on HGNC)
 3. _Bad IDs_: IDs that do not exist, possibly as a result of a typo.
 
 4. _Not found in HGNC_: IDs that can be mapped in UniProt but not on HGNC. __map__ reports the UniProt gene name instead.
-
-5. _Converted to HGNC_: IDs with a UniProt gene name that corresponds to a HGNC gene name - __map__ reports this and gives the correct HGNC name.
-
-### match
-
-__match__ takes input from `in.txt` and is still in progress.
