@@ -246,36 +246,38 @@ def answerQueries():
         if STATUS[ask] == STATUS_MSG[0]:
             if type(MAP[ask]) == type([]):
                 MAP[ask].sort()
-                STATUS[ask] = MAP[ask][0] + " is in HGNC."
+                STATUS[ask] = "HGNC"
             else:
-                STATUS[ask] = MAP[ask] + " is in HGNC."    
+                STATUS[ask] = "HGNC"    
         elif STATUS[ask] == STATUS_MSG[2]:
-            STATUS[ask] = MAP[ask] + " HUGO gene name not available, UniProt gene name returned."
+            STATUS[ask] = "ID not assigned to a HGNC gene name, UniProt gene name is returned"
         elif STATUS[ask] == STATUS_MSG[3]:
-            STATUS[ask] = ask + " is obsolete, gene name is retrieved from old versions of UniProt"
+            STATUS[ask] = "obsolete ID, gene name is retrieved from old versions of UniProt"
         elif STATUS[ask] == STATUS_MSG[4] and ask in ENSEMBL_NAME:
-            STATUS[ask] = ask + " is unassigned; its Ensembl ID is provided as gene name."
+            STATUS[ask] = "ID not assigned to a HGNC gene name, Ensembl ID is returned as gene name"
             results.write(ask + '\t' + ENSEMBL_NAME[ask] + '\t' + STATUS[ask] + '\n')
             DONE[ask] = ask + '\t' + ENSEMBL_NAME[ask] + '\t' + STATUS[ask] + '\n'
             continue
         elif STATUS[ask] == STATUS_MSG[4]:
-            STATUS[ask] = ask + " is unassigned, no Ensembl ID available."
+            STATUS[ask] = "ID not assigned to a HGNC gene name, no UniProt gene name available, no Ensembl ID available"
             results.write(ask + '\t' + 'uncharacterized_protein' + '\t' + STATUS[ask] + '\n')
             DONE[ask] = ask + '\t' + 'uncharacterized_protein' + '\t' + STATUS[ask] + '\n'
             continue
             
         elif STATUS[ask] == STATUS_MSG[5]:
-            STATUS[ask] = ask + " does not exist."    
+            STATUS[ask] = "ID does not exist"    
             
         if type(MAP[ask]) == type([]):
             ans = ask + '\t'
             ans += MAP[ask][0]
-            ans += '\t' + STATUS[ask]
+            ans += '\t'
             if len(MAP[ask]) > 1:
-                ans += " First name in alphabetical order given, other names: "
+                ans += "other HGNC gene names corresponding to this ID: "
                 for i in range(1, len(MAP[ask])):
                     ans += MAP[ask][i] + ' '
-            ans += '\n'
+            else:
+                ans += STATUS[ask]
+            ans += '\n' 
                 
             results.write(ans)
             DONE[ask] = ans
