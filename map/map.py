@@ -14,7 +14,7 @@ QUERIES = []
 MAP = {}
 ENSEMBL_NAME = {}
 STATUS = {}
-STATUS_MSG = {0 : 'In HGNC', 1 : 'Converted from UniProt to HGNC', 2 : 'Not in HGNC', 3 : 'Obsolete', 4 : 'Unassigned', 5 : 'Bad ID, does not exist'}
+STATUS_MSG = {0 : 'In HGNC', 1 : 'Converted from UniProt to HGNC', 2 : 'Not in HGNC', 3 : 'Obsolete', 4 : 'Unassigned', 5 : 'Bad ID, does not exist', 6 : 'Deleted'}
 DONE = {}
 
 def fillData():
@@ -186,7 +186,7 @@ def answerQueries():
     toRemove = []
     obsoleteSet = Set()
     for ID in remain:
-        site = "http://www.uniprot.org/uniprot/?query=id:" + ID + "&sort=score&columns=id,version&format=tab"
+        site = "http://www.uniprot.org/uniprot/?query=id:" + ID + "&sort=score&columns=id,version,protein%20names&format=tab"
         data = urllib2.urlopen(site)
         page = data.read(2000000).splitlines()
         data.close()
@@ -221,6 +221,8 @@ def answerQueries():
                                 if found:
                                     numFound += 1
                                 STATUS[ID] = STATUS_MSG[3]
+                                if len(entry) > 2 and entry[2].strip() == 'Deleted.':
+                                    STATUS[ID] = STATUS_MSG[6]
                                 break
                         except:
                             pass
@@ -265,7 +267,9 @@ def answerQueries():
             continue
             
         elif STATUS[ask] == STATUS_MSG[5]:
-            STATUS[ask] = "ID does not exist"    
+            STATUS[ask] = "ID does not exist"  
+        elif STATUS[ask] == STATUS_MSG[6]:
+            STATUS[ask] = "deleted ID, gene name is retrieved from old versions of UniProt"
             
         if type(MAP[ask]) == type([]):
             ans = ask + '\t'
