@@ -117,6 +117,7 @@ def answerQueries():
         elif ask in obsolete_lookup:
             obsolete.append(ask)
         elif ask in lookup:
+            numFoundNotInHGNC += 1
             numFound += 1
             STATUS[ask] = STATUS_MSG[2]
             MAP[ask] = lookup[ask]
@@ -139,6 +140,7 @@ def answerQueries():
                 STATUS[ask] = STATUS_MSG[0]
             elif ask_isoform in lookup:
                 numFound += 1
+                numFoundNotInHGNC += 1
                 STATUS[ask] = STATUS_MSG[2]
                 MAP[ask] = lookup[ask_isoform]
             else:
@@ -179,6 +181,7 @@ def answerQueries():
             MAP[ID] = geneNames[ID]
             while ID in remain:
                 numFound += 1
+                numFoundNotInHGNC += 1
                 remain.remove(ID)
         else:    
             if ID in ensemblID and ID != 'From':
@@ -312,8 +315,8 @@ def answerQueries():
         print ID
         
     print
-    print str(numFound) + ' found; among these, ' + str(numHGNC) + ' found on HGNC, ' + str(numFound-numHGNC-numFoundNotInHGNC) + ' converted from UniProt to HGNC, ' + str(numFoundNotInHGNC) + ' on Uniprot but not HGNC.'
-    print str(numUnassigned) + ' unassigned, ' + str(numObsolete) + ' obsolete, ' + str(numQueries-numFound-numUnassigned) + ' bad; ' + str(numQueries) + ' queries total.'
+    print str(numFound) + ' found; among these, ' + str(numHGNC) + ' found on HGNC, ' + str(numFoundNotInHGNC) + ' on Uniprot but not HGNC, ' + str(numObsolete) + ' obsolete.' 
+    print str(numUnassigned) + ' unassigned, ' + str(numQueries-numFound-numUnassigned) + ' bad; ' + str(numQueries) + ' queries total.'
     print "Results written to results.txt."    
     
 fillHGNCData()
