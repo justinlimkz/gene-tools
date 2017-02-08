@@ -5,11 +5,13 @@ import urllib,urllib2
 data = open("../human_data/data.txt", "r")
 hgnc_data = open("../hgnc_data/hgnc_symbol_ac.txt", "r")
 hgnc_gene_data = open("../hgnc_data/hgnc_symbol_previous_synonym.txt", "r")
+obsolete_data = open("../misc_data/uniprot_deleted_human_sorted.txt", "r")
 query = open("in.txt", "r")
 results = open("results.txt", "w")
 lookup = {}
 hgnc_lookup = {}
 hgnc_gene_map = {}
+obsolete_lookup = []
 QUERIES = []
 MAP = {}
 ENSEMBL_NAME = {}
@@ -63,6 +65,11 @@ def fillHGNCData():
             alternate_name = line[i].strip(" ,;")
             if alternate_name not in hgnc_gene_map:
                 hgnc_gene_map[alternate_name] = gene_name
+                
+def fillObsoleteData():
+    for line in obsolete_data:
+        line = line.strip()
+        obsolete_lookup.append(line)
             
 def getHGNCName(gene):
     if gene in hgnc_gene_map:
@@ -95,6 +102,7 @@ def answerQueries():
     numFoundNotInHGNC = 0
     notFoundQuery = ''
     remain = []
+    obsolete = []
     
     for ask in query:
         ask = ask.strip()
@@ -106,6 +114,8 @@ def answerQueries():
             numHGNC += 1
             MAP[ask] = hgnc_lookup[ask]
             STATUS[ask] = STATUS_MSG[0]
+        elif ask in obsolete_lookup:
+            obsolete.append(ask)
         elif ask in lookup:
             numFound += 1
             STATUS[ask] = STATUS_MSG[2]
@@ -134,6 +144,7 @@ def answerQueries():
             else:
                 notFoundQuery += ask+' '
                 remain.append(ask)
+
     print 'Resolving problematic IDs...'
     
     # get ID to check if entries exist
@@ -185,7 +196,8 @@ def answerQueries():
     print 'Obsolete IDs (last existing gene name on UniProt given):'
     toRemove = []
     obsoleteSet = Set()
-    for ID in remain:
+    combined = remain+obsolete
+    for ID in combined:
         site = "http://www.uniprot.org/uniprot/?query=id:" + ID + "&sort=score&columns=id,version,protein%20names&format=tab"
         data = urllib2.urlopen(site)
         page = data.read(2000000).splitlines()
@@ -215,8 +227,9 @@ def answerQueries():
                                     if line[0:2] == 'GN':
                                         arrayGN = line.split()
                                         if arrayGN[1].split('=')[0] == 'Name':
-                                            obsoleteSet.add(ID + ' ' + arrayGN[1].split('=')[1])
-                                            MAP[ID].append(arrayGN[1].split('=')[1])
+                                            last_valid_name = arrayGN[1].split('=')[1].strip(",;")
+                                            obsoleteSet.add(ID + ' ' + last_valid_name)
+                                            MAP[ID].append(last_valid_name)
                                             found = True
                                 if found:
                                     numFound += 1
@@ -230,7 +243,10 @@ def answerQueries():
                     numObsolete += 1
                     toRemove.append(ID)
     for ID in toRemove:
-        remain.remove(ID)
+        if ID in remain:
+            remain.remove(ID)
+        else:
+            obsolete.remove(ID)
     for msg in obsoleteSet:
         print msg
         
@@ -275,12 +291,11 @@ def answerQueries():
             ans = ask + '\t'
             ans += MAP[ask][0]
             ans += '\t'
+            ans += STATUS[ask]
             if len(MAP[ask]) > 1:
-                ans += "other HGNC gene names corresponding to this ID: "
+                ans += ". Other HGNC gene names corresponding to this ID: "
                 for i in range(1, len(MAP[ask])):
                     ans += MAP[ask][i] + ' '
-            else:
-                ans += STATUS[ask]
             ans += '\n' 
                 
             results.write(ans)
@@ -303,4 +318,5 @@ def answerQueries():
     
 fillHGNCData()
 fillData()
+fillObsoleteData()
 answerQueries()    
