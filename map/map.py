@@ -274,6 +274,9 @@ def answerQueries():
             STATUS[ask] = "ID not assigned to a HGNC gene name, UniProt gene name is returned"
         elif STATUS[ask] == STATUS_MSG[3]:
             STATUS[ask] = "obsolete ID, gene name is retrieved from old versions of UniProt"
+            if type(MAP[ask]) == type([]):
+                s = "_"
+                MAP[ask] = s.join(MAP[ask])
         elif STATUS[ask] == STATUS_MSG[4] and ask in ENSEMBL_NAME:
             STATUS[ask] = "ID not assigned to a HGNC gene name, Ensembl ID is returned as gene name"
             results.write(ask + '\t' + ENSEMBL_NAME[ask] + '\t' + STATUS[ask] + '\n')
@@ -289,6 +292,9 @@ def answerQueries():
             STATUS[ask] = "ID does not exist"  
         elif STATUS[ask] == STATUS_MSG[6]:
             STATUS[ask] = "deleted ID, gene name is retrieved from old versions of UniProt"
+            if type(MAP[ask]) == type([]):
+                s = "_"
+                MAP[ask] = s.join(MAP[ask])
             
         if type(MAP[ask]) == type([]):
             ans = ask + '\t'
