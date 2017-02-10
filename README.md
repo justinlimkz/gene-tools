@@ -1,6 +1,6 @@
 # gene-tools
 
-Work in progress for my UROP at the Lage Lab at the Broad Institute of Harvard and MIT / Massachusetts General Hospital.
+Tools to reliably map protein IDs to gene names, made during my UROP at the Lage Lab at the Broad Institute of Harvard and MIT.
 
 ### map
 
@@ -33,6 +33,8 @@ gene-tools
 ```
 
 ## Usage
+
+Note that using __map__ requires an Internet connection, since some queries will be resolved online.
 
 ### map
 
