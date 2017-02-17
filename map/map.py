@@ -265,7 +265,7 @@ def answerQueries():
             results.write(DONE[ask])
             continue
     
-        if ask not in MAP:
+        if ask not in MAP or MAP[ask] == '':
             MAP[ask] = "gene_name_not_available"
         if ask not in STATUS:
             STATUS[ask] = STATUS_MSG[5]
