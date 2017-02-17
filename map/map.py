@@ -5,13 +5,13 @@ import urllib,urllib2
 data = open("../human_data/data.txt", "r")
 hgnc_data = open("../hgnc_data/hgnc_symbol_ac.txt", "r")
 hgnc_gene_data = open("../hgnc_data/hgnc_symbol_previous_synonym.txt", "r")
-obsolete_data = open("../misc_data/uniprot_deleted_human_sorted.txt", "r")
+obsolete_data = open("../misc_data/obsolete.txt", "r")
 query = open("in.txt", "r")
 results = open("results.txt", "w")
 lookup = {}
 hgnc_lookup = {}
 hgnc_gene_map = {}
-obsolete_lookup = []
+obsolete_lookup = {}
 QUERIES = []
 MAP = {}
 ENSEMBL_NAME = {}
@@ -68,8 +68,8 @@ def fillHGNCData():
                 
 def fillObsoleteData():
     for line in obsolete_data:
-        line = line.strip()
-        obsolete_lookup.append(line)
+        line = line.split('\t')
+        obsolete_lookup[line[0].strip()] = [line[1].strip(), line[2].strip()]
             
 def getHGNCName(gene):
     if gene in hgnc_gene_map:
@@ -201,50 +201,57 @@ def answerQueries():
     obsoleteSet = Set()
     combined = remain+obsolete
     for ID in combined:
-        site = "http://www.uniprot.org/uniprot/?query=id:" + ID + "&sort=score&columns=id,version,protein%20names&format=tab"
-        data = urllib2.urlopen(site)
-        page = data.read(2000000).splitlines()
-        data.close()
-        for entry in page:
-            entry = entry.split('\t')
-            if entry[0] != 'Entry':
-                if entry[0] != ID:
-                    print "Weird, check query for " + ID
-                    break
-                if (len(entry) > 1 and entry[1].strip() == '') or len(entry) == 1:
-                    history_site = "http://www.uniprot.org/uniprot/" + ID + "?version=*"
-                    history_data = urllib2.urlopen(history_site)
-                    soup = BeautifulSoup(history_data)
-                    for link in soup.findAll('a'):
-                        try:
-                            possible_site = link.get('href')
-                            possible_prefix = possible_site.split('=')
-                            match = './' + ID + '.txt?version'
-                            if possible_prefix[0] == match:
-                                correct_site = "http://www.uniprot.org/uniprot"+possible_site[1:]
-                                correct_data = urllib2.urlopen(correct_site)
-                                correct_page = correct_data.read(200000).splitlines()
-                                MAP[ID] = []
-                                found = False
-                                for line in correct_page:
-                                    if line[0:2] == 'GN':
-                                        arrayGN = line.split()
-                                        if arrayGN[1].split('=')[0] == 'Name':
-                                            last_valid_name = arrayGN[1].split('=')[1].strip(",;")
-                                            obsoleteSet.add(ID + ' ' + last_valid_name)
-                                            MAP[ID].append(last_valid_name)
-                                            found = True
-                                if found:
-                                    numFound += 1
-                                STATUS[ID] = STATUS_MSG[3]
-                                if len(entry) > 2 and entry[2].strip() == 'Deleted.':
-                                    STATUS[ID] = STATUS_MSG[6]
-                                break
-                        except:
-                            pass
+        if ID in obsolete_lookup:                    
+            MAP[ID] = obsolete_lookup[ID][0]
+            STATUS[ID] = obsolete_lookup[ID][1]
+            print ID, MAP[ID]
+            numObsolete += 1
+            toRemove.append(ID)
+        else:
+            site = "http://www.uniprot.org/uniprot/?query=id:" + ID + "&sort=score&columns=id,version,protein%20names&format=tab"
+            data = urllib2.urlopen(site)
+            page = data.read(2000000).splitlines()
+            data.close()
+            for entry in page:
+                entry = entry.split('\t')
+                if entry[0] != 'Entry':
+                    if entry[0] != ID:
+                        print "Weird, check query for " + ID
+                        break
+                    if (len(entry) > 1 and entry[1].strip() == '') or len(entry) == 1:
+                        history_site = "http://www.uniprot.org/uniprot/" + ID + "?version=*"
+                        history_data = urllib2.urlopen(history_site)
+                        soup = BeautifulSoup(history_data)
+                        for link in soup.findAll('a'):
+                            try:
+                                possible_site = link.get('href')
+                                possible_prefix = possible_site.split('=')
+                                match = './' + ID + '.txt?version'
+                                if possible_prefix[0] == match:
+                                    correct_site = "http://www.uniprot.org/uniprot"+possible_site[1:]
+                                    correct_data = urllib2.urlopen(correct_site)
+                                    correct_page = correct_data.read(200000).splitlines()
+                                    MAP[ID] = []
+                                    found = False
+                                    for line in correct_page:
+                                        if line[0:2] == 'GN':
+                                            arrayGN = line.split()
+                                            if arrayGN[1].split('=')[0] == 'Name':
+                                                last_valid_name = arrayGN[1].split('=')[1].strip(",;")
+                                                obsoleteSet.add(ID + ' ' + last_valid_name)
+                                                MAP[ID].append(last_valid_name)
+                                                found = True
+                                    if found:
+                                        numFound += 1
+                                    STATUS[ID] = STATUS_MSG[3]
+                                    if len(entry) > 2 and entry[2].strip() == 'Deleted.':
+                                        STATUS[ID] = STATUS_MSG[6]
+                                    break
+                            except:
+                                pass
                     
-                    numObsolete += 1
-                    toRemove.append(ID)
+                        numObsolete += 1
+                        toRemove.append(ID)
     for ID in toRemove:
         if ID in remain:
             remain.remove(ID)
@@ -259,7 +266,7 @@ def answerQueries():
             continue
     
         if ask not in MAP:
-            MAP[ask] = ''
+            MAP[ask] = "gene_name_not_available"
         if ask not in STATUS:
             STATUS[ask] = STATUS_MSG[5]
             MAP[ask] = "incorrect_ID"
