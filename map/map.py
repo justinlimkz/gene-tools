@@ -106,6 +106,8 @@ def answerQueries():
     
     for ask in query:
         ask = ask.strip()
+        if ask == '':
+            continue
         QUERIES.append(ask)
         numQueries += 1
     
